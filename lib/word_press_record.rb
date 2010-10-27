@@ -5,9 +5,10 @@ class WordPressRecord
   include ActiveModel::Validations
   include ActiveModel::Conversion
   extend ActiveModel::Naming
-    
   
-  @@wp_fields = [
+  class_attribute :_wp_fields, :_wp_url, :_wp_custom_fields, :_wp_after_load, :_wp_post_type, :_wp_queries
+  
+  self._wp_fields = [
     [:id, :integer],
     [:slug, :string],
     [:attachments, :array],
@@ -15,42 +16,45 @@ class WordPressRecord
     [:categories, :array]
   ]
   
-  @@wp_fields.each { |f| attr_accessor f[0] }
+  self._wp_fields.each { |f| attr_accessor f[0] }
   
   def self.wp_field(*args)
     attr_accessor args[0]
-    @@wp_fields.push args
+    self._wp_fields = self._wp_fields.clone
+    self._wp_fields.push args
   end
   
   
-  @@wp_url = nil
+  self._wp_url = nil
   def self.wp_url(url)
-    @@wp_url = url
+    self._wp_url = url
   end
   
   
-  @@wp_custom_fields = []  
+  self._wp_custom_fields = []  
   def self.wp_custom_field(*args)
     attr_accessor args[0]
-    @@wp_custom_fields.push args
+    self._wp_custom_fields = self._wp_custom_fields.clone
+    self._wp_custom_fields.push args
   end
   
   
-  @@wp_after_load = nil
+  self._wp_after_load = nil
   def self.wp_after_load(symbol)
-    @@wp_after_load = symbol
+    self._wp_after_load = symbol
   end
   
   
-  @@wp_post_type = :post
+  self._wp_post_type = :post
   def self.wp_post_type(post_type)
-    @@wp_post_type = post_type
+    self._wp_post_type = post_type
   end
   
   
-  @@wp_queries = {}
+  self._wp_queries = {}
   def self.wp_add_query(key, value)
-    @@wp_queries[key] = value
+    self._wp_queries = self._wp_queries.clone
+    self._wp_queries[key] = value
   end
   
   def persisted?
@@ -108,12 +112,12 @@ class WordPressRecord
     elsif params[:category]
       method = 'get_category_posts'
       category = params[:category]
-      
+    
     else
-      method = 'get_recent_posts'
+      method = 'get_posts'
     end
     
-    url = "#{WP_URL}/?json=#{method}&post_type=#{@@wp_post_type}&count=#{count}&page=#{page}#{WordPressRecord.wp_query_string}"
+    url = "#{WP_URL}/?json=#{method}&post_type=#{self._wp_post_type}&count=#{count}&page=#{page}#{WordPressRecord.wp_query_string}"
     url += "&search=#{search}" if search
     url += "&slug=#{category}" if category
     
@@ -137,7 +141,7 @@ class WordPressRecord
       max_description_size = 160
     
       # Fetch the post
-      url = "#{@@wp_url}/?json=get_post&post_type=#{@@wp_post_type}#{WordPressRecord.wp_query_string}"
+      url = "#{self._wp_url}/?json=get_post&post_type=#{self._wp_post_type}#{WordPressRecord.wp_query_string}"
       
       if self.id
         url += "&id=#{self.id}"
@@ -147,7 +151,7 @@ class WordPressRecord
         self.id = nil
         return
       end
-            
+      
       content = open(url).read
       json = JSON.parse(content)
       
@@ -161,7 +165,7 @@ class WordPressRecord
     return if post.nil?
     
     # Populate the model's fields
-    @@wp_fields.each do |field|
+    self._wp_fields.each do |field|
       name = field[0]
       if post["#{name}"]
         process_and_set_field(field, post["#{name}"])
@@ -169,7 +173,7 @@ class WordPressRecord
     end
     
     if post['custom_fields']
-      @@wp_custom_fields.each do |field|
+      self._wp_custom_fields.each do |field|
         name = field[0]
         if post['custom_fields']["#{name}"]
           process_and_set_field(field, post['custom_fields']["#{name}"][0])
@@ -188,7 +192,7 @@ class WordPressRecord
     end.compact
     
     # Custom post processing
-    self.send(@@wp_after_load, post) if @@wp_after_load
+    self.send(self._wp_after_load, post) if self._wp_after_load
     
     self
   end
@@ -197,12 +201,12 @@ class WordPressRecord
   def self.wp_query_string
     wp_query = ''
     
-    @@wp_queries.each do |key, value|
+    self._wp_queries.each do |key, value|
       wp_query += "&#{CGI.escape(key.to_s)}=#{CGI.escape(value)}"
     end
     
-    unless @@wp_custom_fields.empty?
-      wp_query += "&custom_fields=#{@@wp_custom_fields.map{|f| f[0]}.join(',')}"
+    unless self._wp_custom_fields.empty?
+      wp_query += "&custom_fields=#{self._wp_custom_fields.map{|f| f[0]}.join(',')}"
     end
     
     wp_query
