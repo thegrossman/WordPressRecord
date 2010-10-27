@@ -5,20 +5,27 @@ class WordPressRecord
   include ActiveModel::Validations
   include ActiveModel::Conversion
   extend ActiveModel::Naming
+    
+  
+  @@wp_fields = [
+    [:id, :integer],
+    [:slug, :string],
+    [:attachments, :array],
+    [:images, :array],
+    [:categories, :array]
+  ]
+  
+  @@wp_fields.each { |f| attr_accessor f[0] }
+  
+  def self.wp_field(*args)
+    attr_accessor args[0]
+    @@wp_fields.push args
+  end
   
   
   @@wp_url = nil
   def self.wp_url(url)
     @@wp_url = url
-  end
-  
-  
-  @@wp_fields = [[:id, :integer], [:slug, :string], [:attachments, :array], [:images, :array]]
-  attr_accessor :id, :slug, :attachments, :images
-  
-  def self.wp_field(*args)
-    attr_accessor args[0]
-    @@wp_fields.push args
   end
   
   
@@ -91,7 +98,26 @@ class WordPressRecord
     count = params[:count] || params[:limit] || 10
     page = (params[:page] || 0) + 1
     
-    content = open("#{WP_URL}/?json=get_recent_posts&post_type=#{@@wp_post_type}&count=#{count}&page=#{page}#{WordPressRecord.wp_query_string}").read
+    search = nil
+    category = nil
+    
+    if params[:search]
+      method = 'get_search_results'
+      search = CGI.escape(params[:search].strip)
+    
+    elsif params[:category]
+      method = 'get_category_posts'
+      category = params[:category]
+      
+    else
+      method = 'get_recent_posts'
+    end
+    
+    url = "#{WP_URL}/?json=#{method}&post_type=#{@@wp_post_type}&count=#{count}&page=#{page}#{WordPressRecord.wp_query_string}"
+    url += "&search=#{search}" if search
+    url += "&slug=#{category}" if category
+    
+    content = open(url).read
     json = JSON.parse(content)
     
     return if json["status"] == 'error'
@@ -146,18 +172,18 @@ class WordPressRecord
       @@wp_custom_fields.each do |field|
         name = field[0]
         if post['custom_fields']["#{name}"]
-          process_and_set_field(field, post['custom_fields']["#{name}"])
+          process_and_set_field(field, post['custom_fields']["#{name}"][0])
         end
       end
     end
     
-    # Special case for image attachments
-    self.images = post['attachments'].map do |attachment|
+    # Special case for attachments / images
+    self.images = self.attachments.map do |attachment|
       return nil unless attachment['images']
       {
-        :files => attachment['images'],
-        :caption => attachment['caption'],
-        :title => attachment['title']
+        "files" => attachment['images'],
+        "caption" => attachment['caption'],
+        "title" => attachment['title']
       }
     end.compact
     
@@ -202,8 +228,12 @@ class WordPressRecord
       value = value.to_f
     elsif type == :datetime
       value = Time.parse(value) rescue Time.at(value) rescue nil
+    elsif type == :array
+      value = value.to_a
+    elsif type == :hash
+      value ||= {}
     end
-        
+    
     send("#{name}=", value)
   end
   
