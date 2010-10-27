@@ -117,7 +117,7 @@ class WordPressRecord
       method = 'get_posts'
     end
     
-    url = "#{WP_URL}/?json=#{method}&post_type=#{self._wp_post_type}&count=#{count}&page=#{page}#{WordPressRecord.wp_query_string}"
+    url = "#{WP_URL}/?json=#{method}&post_type=#{self._wp_post_type}&count=#{count}&page=#{page}#{wp_query_string}"
     url += "&search=#{search}" if search
     url += "&slug=#{category}" if category
     
@@ -141,7 +141,7 @@ class WordPressRecord
       max_description_size = 160
     
       # Fetch the post
-      url = "#{self._wp_url}/?json=get_post&post_type=#{self._wp_post_type}#{WordPressRecord.wp_query_string}"
+      url = "#{self._wp_url}/?json=get_post&post_type=#{self._wp_post_type}#{self.class.wp_query_string}"
       
       if self.id
         url += "&id=#{self.id}"
