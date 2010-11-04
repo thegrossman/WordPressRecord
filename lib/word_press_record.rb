@@ -105,21 +105,28 @@ class WordPressRecord
     search = nil
     category = nil
     
+    method = 'get_posts'
+    
+    if params[:category]
+      method = 'get_category_posts'
+      category = params[:category]
+    end
+    
     if params[:search]
       method = 'get_search_results'
       search = CGI.escape(params[:search].strip)
+    end
     
-    elsif params[:category]
-      method = 'get_category_posts'
-      category = params[:category]
-    
-    else
-      method = 'get_posts'
+    # TODO: This method is not defined in the standard WP JSON API
+    if params[:tagged]
+      method = 'queries.get_posts_by_tags'
+      tags = params[:tagged].to_s.gsub(/\s*,\s*/, '+')
     end
     
     url = "#{WP_URL}/?json=#{method}&post_type=#{self._wp_post_type}&count=#{count}&page=#{page}#{wp_query_string}"
     url += "&search=#{search}" if search
     url += "&slug=#{category}" if category
+    url += "&tags=#{tags}" if tags
     
     content = open(url).read
     json = JSON.parse(content)

@@ -5,11 +5,11 @@
 
 Gem::Specification.new do |s|
   s.name = %q{word_press_record}
-  s.version = "0.1.2"
+  s.version = "0.1.3"
 
   s.required_rubygems_version = Gem::Requirement.new(">= 0") if s.respond_to? :required_rubygems_version=
   s.authors = ["Adam Grossman"]
-  s.date = %q{2010-10-27}
+  s.date = %q{2010-11-04}
   s.description = %q{WordPressRecord implements an ActiveModel interface for talking to a WordPress site, using the WordPress JSON API}
   s.email = %q{adam@jackadam.net}
   s.extra_rdoc_files = [
@@ -24,6 +24,7 @@ Gem::Specification.new do |s|
      "Rakefile",
      "VERSION",
      "lib/word_press_record.rb",
+     "php/json-api/controllers/queries.php",
      "test/helper.rb",
      "test/test_word_press_record.rb",
      "word_press_record.gemspec"
