@@ -13,7 +13,8 @@ class WordPressRecord
     [:slug, :string],
     [:attachments, :array],
     [:images, :array],
-    [:categories, :array]
+    [:categories, :array],
+    [:tags, :array]
   ]
   
   self._wp_fields.each { |f| attr_accessor f[0] }
