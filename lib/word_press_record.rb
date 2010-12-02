@@ -110,7 +110,7 @@ class WordPressRecord
     method = 'queries.general'
     
     if params[:category]
-      category = params[:category]
+      category = CGI.escape(params[:category])
     end
     
     if params[:search]
@@ -118,7 +118,7 @@ class WordPressRecord
     end
     
     if params[:tagged]
-      tags = params[:tagged].to_s.gsub(/\s*,\s*/, '+')
+      tags = CGI.escape(params[:tagged].to_s.gsub(/\s*,\s*/, ',').gsub(/\s+/, ' '))
     end
     
     url = "#{WP_URL}/?json=#{method}&post_type=#{self._wp_post_type}&count=#{count}&page=#{page}#{wp_query_string}"
