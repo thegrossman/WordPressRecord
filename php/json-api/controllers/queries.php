@@ -2,20 +2,21 @@
 
 class JSON_API_Queries_Controller {
 
-  // Retrieve posts based on provided tags
-  public function get_posts_by_tags() {
+  public function general() {
     global $json_api;
     
     $query = array();
     
     if($json_api->query->tags) {
       $query['tag'] = $json_api->query->tags;
-    } else {
-      $json_api->error("Include 'tags' var in your request.");
     }
     
     if ($json_api->query->search) {
       $query['s'] = $json_api->query->search;
+    }
+
+    if ($json_api->query->category) {
+      $query['category_name'] = $json_api->query->category;
     }
     
     $posts = $json_api->introspector->get_posts($query);

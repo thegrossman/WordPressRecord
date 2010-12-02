@@ -103,30 +103,27 @@ class WordPressRecord
     count = params[:count] || params[:limit] || 10
     page = (params[:page] || 0) + 1
     
-    search = nil
     category = nil
+    search = nil
+    tags = nil
     
-    method = 'get_posts'
+    method = 'queries.general'
     
     if params[:category]
-      method = 'get_category_posts'
       category = params[:category]
     end
     
     if params[:search]
-      method = 'get_search_results'
       search = CGI.escape(params[:search].strip)
     end
     
-    # TODO: This method is not defined in the standard WP JSON API
     if params[:tagged]
-      method = 'queries.get_posts_by_tags'
       tags = params[:tagged].to_s.gsub(/\s*,\s*/, '+')
     end
     
     url = "#{WP_URL}/?json=#{method}&post_type=#{self._wp_post_type}&count=#{count}&page=#{page}#{wp_query_string}"
     url += "&search=#{search}" if search
-    url += "&slug=#{category}" if category
+    url += "&category=#{category}" if category
     url += "&tags=#{tags}" if tags
     
     content = open(url).read
