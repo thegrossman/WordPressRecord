@@ -6,7 +6,7 @@ class WordPressRecord
   include ActiveModel::Conversion
   extend ActiveModel::Naming
   
-  class_attribute :_wp_fields, :_wp_url, :_wp_custom_fields, :_wp_after_load, :_wp_post_type, :_wp_queries
+  class_attribute :_wp_fields, :_wp_url, :_wp_headers, :_wp_custom_fields, :_wp_after_load, :_wp_post_type, :_wp_queries
   
   self._wp_fields = [
     [:id, :integer],
@@ -29,6 +29,12 @@ class WordPressRecord
   self._wp_url = nil
   def self.wp_url(url)
     self._wp_url = url
+  end
+  
+  
+  self._wp_headers = {}
+  def self.wp_headers(headers)
+    self._wp_headers = headers
   end
   
   
@@ -121,12 +127,12 @@ class WordPressRecord
       tags = CGI.escape(params[:tagged].to_s.gsub(/\s*,\s*/, ',').gsub(/\s+/, ' '))
     end
     
-    url = "#{WP_URL}/?json=#{method}&post_type=#{self._wp_post_type}&count=#{count}&page=#{page}#{wp_query_string}"
+    url = "#{self._wp_url}/?json=#{method}&post_type=#{self._wp_post_type}&count=#{count}&page=#{page}#{wp_query_string}"
     url += "&search=#{search}" if search
     url += "&category=#{category}" if category
     url += "&tags=#{tags}" if tags
     
-    content = open(url).read
+    content = open(url, self._wp_headers).read
     json = JSON.parse(content)
     
     return if json["status"] == 'error'
@@ -157,7 +163,7 @@ class WordPressRecord
         return
       end
       
-      content = open(url).read
+      content = open(url, self._wp_headers).read
       json = JSON.parse(content)
       
       if json['status'] == 'error'
