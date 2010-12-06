@@ -106,6 +106,8 @@ class WordPressRecord
   
   def self.all(params = nil)
     params ||= {}
+    params[:results_metadata] ||= {}
+    
     count = params[:count] || params[:limit] || 10
     page = (params[:page] || 0) + 1
     
@@ -134,6 +136,11 @@ class WordPressRecord
     
     content = open(url, self._wp_headers).read
     json = JSON.parse(content)
+    
+    params[:results_metadata][:url] = url
+    params[:results_metadata][:count] = json['count']
+    params[:results_metadata][:count_total] = json['count_total']
+    params[:results_metadata][:pages] = json['pages']
     
     return if json["status"] == 'error'
     return json["posts"].map{|post| new(:wp_post => post)}
